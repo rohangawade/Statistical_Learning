@@ -1,8 +1,8 @@
 ---
 title: "R Notebook for Boston Housing Prediction"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 ```{r}
 library(MASS)
@@ -103,6 +103,42 @@ points(lstat,fitted(fit6),col="blue",pch=20)
 
 The fit6 model starts to overfit the data.
 
-```{r}
+#Lets see qualitative predictors
+We will use carseat dataset
 
+```{r}
+names(ISLR::Carseats)
+head(ISLR::Carseats)
 ```
+
+```{r}
+dataCarseat <- ISLR::Carseats
+summary(dataCarseat)
+```
+
+```{r}
+model1 <- lm(Sales~.+Income:Advertising+Age:Price,dataCarseat)
+summary(model1)
+```
+Income and advertising interactions appears to be significant 
+```{r}
+contrasts(dataCarseat$ShelveLoc)
+```
+
+```{r}
+regplot=function(x,y,...){
+  fit= lm(y~x)
+  plot(x,y,...)
+  abline(fit,col="red")
+}
+```
+
+```{r}
+attach(dataCarseat)
+regplot(Price,Sales)
+```
+
+```{r}
+regplot(Price,Sales,xlab="Price",ylab="Sales",col="blue",pch=20)
+```
+
