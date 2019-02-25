@@ -1,23 +1,108 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "R Notebook for Boston Housing Prediction"
+output:
+  pdf_document: default
+  html_document: default
 ---
-
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
 ```{r}
 library(MASS)
 library(ISLR)
 ```
 
+
 ```{r}
 names(Boston)
 ```
 
+This features describe socio-economic condition of Boston.
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+```{r}
+plot(medv~lstat,Boston)
+```
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+```{r}
+#fitting the data
+fit1 <- lm(medv~lstat,Boston)
+summary(fit1)
+```
+
+The p-value is less than 0.05 indicating the lstat is significant feature
+The negative slope indicates the as the lstat increases the target value medv decreases
+```{r}
+plot(medv~lstat,Boston)
+abline(fit1,col="red")
+```
+
+Lets find confidence interval for this fit
+```{r}
+confint(fit1)
+```
+
+
+```{r}
+predict(fit1,data.frame(lstat=c(5,10,15)),interval="confidence")
+```
+
+```{r}
+fit2 <- lm(medv~lstat+age,Boston)
+summary(fit2)
+```
+
+
+```{r}
+fitall <- lm(medv~.,Boston)
+summary(fitall)
+```
+
+The age is no longer significant with all other predicts. Also indus is also not significant
+```{r}
+par(mfrow=c(2,2))
+plot(fitall)
+```
+
+The residual plots show non linearity in the data. The third plot shows whether The variance is changing with the mean or not. It seems there is some relationship here.
+```{r}
+shapiro.test(rstandard(fitall))
+```
+
+The Shapiro normality test, the p-value is < 0.05. The residual is not normally distributed. It means we need to improve our model
+```{r}
+#update the model
+fit3 <- update(fitall,~.-age-indus)
+summary(fit3)
+```
+
+Non Linear terms and Interactions
+```{r}
+fit4 <- lm(medv~lstat*age,Boston)
+summary(fit4)
+```
+As we can see thought the main effect for age is not significant the interaction between lstat and age is significant
+```{r}
+#Quadratic
+fit5<-lm(medv~lstat+I(lstat^2),Boston);summary(fit5)
+
+```
+
+```{r}
+attach(Boston) # the variables can now be used in workspace.
+par(mfrow=c(1,1))
+plot(medv~lstat)
+points(lstat,fitted(fit5),col="red",pch=20) # each value of lstat have fitted values from our quadratic model
+
+```
+
+
+```{r}
+fit6 <- lm(medv~poly(lstat,4))
+plot(medv~lstat)
+points(lstat,fitted(fit5),col="red",pch=20)
+points(lstat,fitted(fit6),col="blue",pch=20)
+```
+
+The fit6 model starts to overfit the data.
+
+```{r}
+
+```
