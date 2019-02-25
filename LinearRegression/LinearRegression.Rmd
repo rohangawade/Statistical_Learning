@@ -130,6 +130,7 @@ regplot=function(x,y,...){
   fit= lm(y~x)
   plot(x,y,...)
   abline(fit,col="red")
+  summary(fit)
 }
 ```
 
