@@ -1,0 +1,37 @@
+---
+title: "Linear Discriminant Analysis Notebook"
+output: html_notebook
+---
+
+```{r}
+library(ISLR)
+library(MASS)
+attach(Smarket)
+```
+Using previous two days lags to predict what direction the stock will take.
+```{r}
+lda.fit = lda(Direction~Lag1+Lag2,data = Smarket,subset = Year<2005)
+lda.fit
+```
+Prior probalities are almost 50% for up and down.
+
+```{r}
+plot(lda.fit)
+```
+Separately plots the LDA for two groups
+```{r}
+Smarket.2005 <- subset(Smarket, Year == 2005)
+lda.pred <- predict(lda.fit,Smarket.2005)
+class(lda.pred)
+data.frame(lda.pred)[1:5,]
+```
+
+```{r}
+table(lda.pred$class,Smarket.2005$Direction)
+```
+
+```{r}
+mean(lda.pred$class==Smarket.2005$Direction)
+```
+
+
