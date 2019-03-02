@@ -1,0 +1,32 @@
+---
+title: "K-Nearest Neighbor Notebook"
+output: html_notebook
+---
+
+```{r}
+library(class)
+attach(Smarket)
+#Creating matrix of two columns Lag1 and Lag2
+Xlag <- cbind(Lag1,Lag2)
+```
+
+```{r}
+train <- Year < 2005
+?knn
+knn.pred <- knn(train = Xlag[train,],test = Xlag[!train,],Direction[train],k=1)
+```
+
+```{r}
+table(knn.pred,Direction[!train])
+```
+
+```{r}
+mean(knn.pred==Direction[!train])
+```
+
+```{r}
+knn.pred1 <- knn(train = Xlag[train,],test = Xlag[!train,],Direction[train],k=3)
+table(knn.pred1,Direction[!train])
+mean(knn.pred1==Direction[!train])
+```
+We can see after increasing the k value we have better performance.
