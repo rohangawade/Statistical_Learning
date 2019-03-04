@@ -1,0 +1,66 @@
+---
+title: "Resmpling Methods Notebook - CrossValidation"
+output: html_notebook
+---
+```{r}
+require(ISLR)
+require(boot)
+```
+
+```{r}
+plot(mpg~horsepower,data = Auto)
+
+```
+LOOCV
+```{r}
+glm.fit <- glm(mpg~horsepower,data=Auto)
+cv.glm(Auto,glm.fit)$delta
+```
+1. 24.23151 is leave one out crossvalidation result a
+2. 24.23114 is bias corrected version of it.
+```{r}
+#implementing loocv
+loocv=function(fit){
+  h=lm.influence(fit)$h
+  mean((residuals(fit)/(1-h))^2)
+}
+
+```
+h is the self influence factor.It is measure of how much observation i contributes to its own fit.if h is close to 1 then observation i contributes a lot to its own fit.
+```{r}
+loocv(glm.fit)
+```
+fitting polynomial fo different degress
+```{r}
+cv.error = rep(0,5)
+degree = 1:5
+for(d in degree){
+  glm.fit1=glm(mpg~poly(horsepower,d),data=Auto)
+  cv.error[d]=loocv(glm.fit1)
+}
+
+```
+
+```{r}
+plot(degree,cv.error,type="b")
+```
+
+We can see that quadratic function does a good job as the plot flattens after degree = 2.
+
+Lets try 10 fold crossvalidation
+```{r}
+cv.error10 = rep(0,5)
+for(d in degree){
+  glm.fit2=glm(mpg~poly(horsepower,d),data=Auto)
+  cv.error10[d]= cv.glm(Auto,glm.fit2, K = 10)$delta[1]
+}
+```
+
+```{r}
+plot(degree,cv.error,type="b")
+lines(degree,cv.error10,type="b",col="red")
+```
+Here both loocv and 10 fold are giving similar results.
+```{r}
+
+```
