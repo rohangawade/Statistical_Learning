@@ -9,7 +9,6 @@ require(boot)
 
 ```{r}
 plot(mpg~horsepower,data = Auto)
-
 ```
 LOOCV
 ```{r}
