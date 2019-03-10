@@ -1,0 +1,64 @@
+---
+title: "Model Selection - Best Subset"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r cars}
+library(ISLR)
+```
+This dataset was taken from the StatLib library which is maintained at Carnegie Mellon University. This is part of the data that was used in the 1988 ASA Graphics Section Poster Session. The salary data were originally from Sports Illustrated, April 20, 1987. The 1986 and career statistics were obtained from The 1987 Baseball Encyclopedia Update published by Collier Books, Macmillan Publishing Company, New York.
+```{r}
+summary(Hitters)
+```
+We will predict salary for the players.
+But we have missing values here. In this case we will
+remove missing values. We can also impute the data with mean or median or mode depending on the distribution.
+```{r pressure, echo=FALSE}
+with(Hitters,sum(is.na(Salary)))
+hitters = na.omit(Hitters)
+with(hitters,sum(is.na(Salary)))
+```
+Best Subset Regression
+Here we go through all models of different subset sizes and looks for best in each size. 2^p models where p is number of predictors.
+Library 'leaps' can be used here
+```{r}
+library(leaps)
+```
+
+```{r}
+regfit.full=regsubsets(Salary~.,data= Hitters)
+summary(regfit.full)
+```
+
+* indicates feature selected for that particular siz.
+by default we get for size 8
+```{r}
+#for all predictors.
+regfit.full1=regsubsets(Salary~.,data= Hitters,nvmax = 19)
+reg.summary = summary(regfit.full1)
+names(reg.summary)
+```
+```{r}
+mincp= which.min(reg.summary$cp)
+plot(reg.summary$cp,xlab="Number of variables",ylab="cp")
+
+points(mincp,reg.summary$cp[mincp],pch=20,col="red")
+```
+THe lowest prediction error is for 10 variable.
+
+Using plot method for 'regsubsets' object
+```{r}
+plot(regfit.full1,scale="Cp")
+```
+The black one indicates In features and white indicates out features
+```{r}
+coef(regfit.full1,mincp)
+```
+Coefficients for 10 variables in the model.
