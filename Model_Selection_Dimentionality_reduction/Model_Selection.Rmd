@@ -1,8 +1,9 @@
 ---
-title: "Model Selection - Best Subset"
+title: "Model Selection - Best Subset, Forward Stepwise selection"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -33,7 +34,7 @@ library(leaps)
 ```
 
 ```{r}
-regfit.full=regsubsets(Salary~.,data= Hitters)
+regfit.full=regsubsets(Salary~.,data= hitters)
 summary(regfit.full)
 ```
 
@@ -41,7 +42,7 @@ summary(regfit.full)
 by default we get for size 8
 ```{r}
 #for all predictors.
-regfit.full1=regsubsets(Salary~.,data= Hitters,nvmax = 19)
+regfit.full1=regsubsets(Salary~.,data= hitters,nvmax = 19)
 reg.summary = summary(regfit.full1)
 names(reg.summary)
 ```
@@ -62,3 +63,70 @@ The black one indicates In features and white indicates out features
 coef(regfit.full1,mincp)
 ```
 Coefficients for 10 variables in the model.
+-----------------------------------------------
+Forward Stepwise selection - greedy algorithm. 
+Each time it includes next best variable, but it produces in nested sequence
+```{r}
+regfit.fwd = regsubsets(Salary~.,data = hitters,nvmax = 19,method = "forward")
+```
+
+```{r}
+summary(regfit.fwd)
+```
+Each model contains all variables from previous model plus 1 new variable.
+```{r}
+plot(regfit.fwd,scale="Cp")
+```
+Similar structure like best subset.
+----------------------------------
+Model Selection using validation set
+```{r}
+dim(hitters)
+```
+
+```{r}
+set.seed(1)
+#2/3 train and 1/3 test
+#sample from 263, 180 observations
+train=sample(seq(263),180,replace=FALSE)
+```
+
+```{r}
+regfit.fwdvs = regsubsets(Salary~.,data = hitters[train,],nvmax = 19,method = "forward")
+```
+Predictions on validation set 
+Since we will have 19 models we use a vector to keep track of error.
+```{r}
+val.errors = rep(NA,19)
+```
+
+```{r}
+x.test= model.matrix(Salary~.,data=hitters[-train,])
+```
+#no predict method for regsubset
+```{r}
+for(i in 1:19){
+  coefi=coef(regfit.fwdvs,id = i)
+  pred=x.test[,names(coefi)]%*%coefi #matrix multiply with coeffi vector
+  val.errors[i]= mean((hitters$Salary[-train]-pred)^2)
+}
+```
+
+```{r}
+plot(sqrt(val.errors),ylab = "Root MSE",ylim=c(300,400),pch=19,type="b")
+#-1 removes the null model
+points(sqrt(regfit.fwdvs$rss[-1]/180),col="blue",pch=19,type="b")
+legend("topright",legend=c("Training","Validation"),col=c("blue","black"),pch=19)
+
+```
+The rss decreases as each time a new variable is included the fit of the model is improved on training data
+
+Since we dont have predict method for regsubsets. Lets write a function for it
+```{r}
+predict.regsubsets=function(object,newdata,id,...){
+  form=as.formula(object$call[[2]])
+  testmat=model.matrix(form,newdata)
+  coefi=coef(object,id=id)
+  testmat[,names(coefi)]%*%coefi
+}
+```
