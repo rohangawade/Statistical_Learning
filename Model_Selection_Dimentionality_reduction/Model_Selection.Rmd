@@ -167,3 +167,95 @@ plot(rmse.cv,pch=19, type="b")
 
 This erros are computed using full training set, done fold by fold and averaged.
 This seems to favor model size of 11 or 12.
+
+--------------------------------------------------
+Ridge Regression and Lasso Regression
+```{r}
+library(glmnet)
+```
+We need to provide matrix x of predictors and vector y to glmnet as it doesnot use formula
+```{r}
+X=model.matrix(Salary~.,-1,data=hitters)
+y=hitters$Salary
+```
+Fitting a ridge regression model.
+using glmnet with alpha=0 for ridge (l2 norm)
+alpha=1 for lasso (l1 norm)
+```{r}
+fit.ridge = glmnet(X,y,alpha=0)
+```
+
+```{r}
+plot(fit.ridge,xvar="lambda",label=TRUE)
+```
+It makes plot as a function of log of lambda with the co-efficients. lambda controls the penalty on coeffiecients where ridge regression is penalised by sum of squares of coefficients.
+As the lambda gets big the sum of squares of co-efficients shrinks to zero. 
+So as we see on log scale when lambda =12 we have all the coeffiecients = 0, and as we relax lambda the co-efficient increase until lambda is 0 and coefficients are unregularized.
+Ridge Regression keeps all the variables in and shrink coefficients to zero where as best and forward stepwise selection controls the model complexity by restricting number of variables.
+```{r}
+#cross validation using glmnet, by default k =10
+cv.ridge=cv.glmnet(X,y,alpha=0)
+plot(cv.ridge)
+```
+The first line on the left indicates minimum error while other on right is at one standard error of minimum. 
+As we can see there are all variables in the model.(19 variables)
+
+--------------------------------------
+Lasso - alpha =1 by default
+```{r}
+fit.lasso =glmnet(X,y)
+```
+
+```{r}
+plot(fit.lasso,xvar="lambda",label=TRUE)
+```
+Initially all coeffiencts are zero. THen the first coefficient is the purple line and then green one jumps in and then red.
+At top of the plot we can see the number of variables in model as function of lambda.
+Lasso does variable selection and shrinkage of coeffiencts
+```{r}
+#Deviance, percentage of deviance explained or in case of regression, percentage of sum of squares explained, i.e r squared.
+plot(fit.lasso,xvar="dev",label=TRUE)
+```
+Now the orientation is different compare to lambda
+Fraction of Deviance explained is equivalent to r sqaured.
+As we can see a lot of r squared is explained for heavy shrinkage of coefficients. While after 0.4 or 0.5
+towards the end the relatively small increase in r squared, co-efficients grow large. which may indicate overfitting at the end of the path.
+```{r}
+cv.lasso = cv.glmnet(X,y)
+plot(cv.lasso)
+```
+The minimum cross validation error is at model of size 15 and withing one standard error is at model of size 6 or 5
+```{r}
+coef(cv.lasso)
+```
+Coefficient vector wrt best model which is within one standar error of mininmum. 
+As we are using cv.glmnet if we use model by fit.glmnet we will have roughtly 100 of vectors depending on each value, indexed by different lambda values.
+-------------------------------------
+using train -validation division.
+```{r}
+lasso.train = glmnet(X[train,],y[train])
+lasso.train
+```
+Degree of freedom, number of variables. it tries to predict for 100 values of lambda but we can see, there is no change in percentage deviation as lambda gets smaller, so it stops.
+```{r}
+predlasso = predict(lasso.train,X[-train,])
+dim(predlasso)
+```
+83 observations in validation set and 89 values of lambda.
+```{r}
+#here y[-train] is a vector of 83 and pred is 83*89, here R recycles vector 89 times and column wise and gives result of matrix 83*89
+rmse=sqrt(apply((y[-train]-predlasso)^2,2,mean))
+plot(log(lasso.train$lambda),rmse,type="b",xlab="log(lambda)")
+```
+log(lambda) approx < 2 seems to be overfitting, > 4 underfitting while around 3 seems to be ideal value. 
+```{r}
+#get lambda value for low rmse. we index the lambdas with order of rmse.
+lambda.best=lasso.train$lambda[order(rmse)[1]]
+lambda.best
+```
+
+```{r}
+coef(lasso.train,s=lambda.best)
+```
+This features can be used to build a model.
+cv.glmnet gave us 5 variables.
